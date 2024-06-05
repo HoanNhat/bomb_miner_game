@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from "react";
+import io from "socket.io-client";
+import { useNavigate } from 'react-router-dom'
+import RoomContext from '../context/RoomContext'
+import React, { useState, useEffect, useContext } from "react";
+
+const socket = io('http://localhost:3001')
 
 const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
   const battleField = []
   const NO_BOMB_USING = -1
+  
+  const navigate = useNavigate()
+  const { roomId } = useContext(RoomContext)
+  const [socketData, setSocketData] = useState()
   const [fieldPlace, setfieldPlace] = useState([])
   const [bombPosition, setBombPosition] = useState([])
   const [bombDirection, setBombDirection] = useState("x")
@@ -14,6 +23,25 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
     }
     battleField.push(row)
   }
+
+  useEffect(() => {
+    if (!roomId) {
+      navigate("/")
+    }
+  }, [])
+
+  useEffect(() => {
+    if (roomId) {
+      socket.emit('join_room', roomId);
+    }
+  }, [roomId])
+
+  useEffect(() => {
+    socket.on('received_data', (data) => {
+      console.log(data)
+      setSocketData(data.bombPosition)
+    })
+  }, [socket])
 
   const handleMouseMove = (position) => {
     let start = { i: position.i, j: position.j }
@@ -58,7 +86,7 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
 
   const handleReady = () =>  {
     if (bomb.every(value => value == 0)) {
-      console.log("true")
+     socket.emit('send_data', {bombPosition, roomId})
     }
   }
 

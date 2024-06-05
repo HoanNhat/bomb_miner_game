@@ -1,7 +1,7 @@
 import { useState } from "react";
-import BattleField from "./components/BattleField";
-import BombBar from "./components/BombBar";
-import Timer from "./components/Timer";
+import BattleField from "../components/BattleField";
+import BombBar from "../components/BombBar";
+import Timer from "../components/Timer";
 
 function App() {
   const NO_BOMB_USING = -1
