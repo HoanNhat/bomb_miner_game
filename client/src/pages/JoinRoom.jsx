@@ -1,19 +1,21 @@
-import React, { useState, useContext } from "react";
-import io from 'socket.io-client'
-import { useNavigate } from 'react-router-dom'
-import RoomContext from '../context/RoomContext'
-
-// const socket = io('http://localhost:3001')
+import React, { useState, useContext, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import RoomContext from "../context/RoomContext"
 
 const JoinRoom = () => {
   const navigate = useNavigate()
   const { setRoomId } = useContext(RoomContext)
-  const [ roomIdInput, setRoomIdInput ] = useState()
+  const [roomIdInput, setRoomIdInput] = useState()
+
+  useEffect(() => {
+    localStorage.clear()
+  }, [])
 
   const handleJoinRoom = () => {
-    if (roomIdInput != '') {
+    if (roomIdInput != "") {
       setRoomId(roomIdInput)
-      navigate('/battle')
+      localStorage.setItem("currentRoom", roomIdInput)
+      navigate("/battle")
     }
   }
 
@@ -43,7 +45,9 @@ const JoinRoom = () => {
             id="default-search"
             className="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             placeholder="Enter room ID..."
-            onChange={(e) => {setRoomIdInput(e.target.value)}}
+            onChange={(e) => {
+              setRoomIdInput(e.target.value);
+            }}
             required
           />
           <button
