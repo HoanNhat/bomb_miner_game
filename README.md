@@ -16,3 +16,14 @@ The game is built using the following technologies:
 - Join room with friend by code: Choose room id to play with friend
 - Place bomb: Choose position to place bomb for opponent to explore.
 - Gameplay: The player who is ready first will have the right to go first. Select a position on the board; if the chosen position has a bomb placed by the opponent, the player gets another turn. If the chosen position does not have a bomb, the turn passes to the opponent. This process repeats. The game ends when one player finds all the positions where the opponent has placed bombs.
+
+## Some image in game
+
+- Join room with your friend
+<img src="/img/join_room.png">
+
+- Intense battles of wits
+<img src="/img/in_match.png">
+
+- Determining the winner
+<img src="/img/match_done.png">
