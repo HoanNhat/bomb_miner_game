@@ -14,7 +14,6 @@ const JoinRoom = () => {
   const handleJoinRoom = () => {
     if (roomIdInput != "") {
       setRoomId(roomIdInput)
-      localStorage.setItem("currentRoom", roomIdInput)
       navigate("/battle")
     }
   }

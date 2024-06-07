@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CheckBomb from "../utils/CheckBomb";
 import RoomContext from "../context/RoomContext";
 import Modal from "./Modal";
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 
 const socket = io("http://localhost:3001");
 
@@ -39,17 +39,25 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
   }
 
   useEffect(() => {
-    const curRoom = localStorage.getItem("currentRoom");
-    if (roomId == null && curRoom == null) {
+    if (roomId == null) {
       navigate("/");
-    } else {
-      socket.emit("join_room", roomId ? roomId : curRoom);
+    }
+    socket.emit("join_room", roomId);
+    setIsContinueTurn(!CONTINUE)
 
-      let sum = 0;
-      for (let i = 0; i < bomb.length; i++) {
-        sum += bomb[i] * (i + 1);
-      }
-      setBombNeedRemoved(sum);
+    socket.on("can_start_match", () => {
+      setIsContinueTurn(CONTINUE)
+    })
+
+    let sum = 0;
+    for (let i = 0; i < bomb.length; i++) {
+      sum += bomb[i] * (i + 1);
+    }
+
+    setBombNeedRemoved(sum);
+
+    return () => {
+      socket.off("can_start_match")
     }
   }, []);
 
@@ -77,24 +85,29 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
 
   useEffect(() => {
     socket.on("match_start", () => {
+      setIsContinueTurn(!CONTINUE);
       setBombPosition([]);
       setFieldPlace([]);
       setBombPositionOpponent(
         JSON.parse(localStorage.getItem("bombPositionOpponent"))
-      );
-      setModalMessage("Match start");
-      setTimeout(() => {
-        
-      }, 3000);
-      setIsContinueTurn(CONTINUE);
+      ); 
       setIsMatchStart(MATCH_START);
-      setModalMessage("Waiting for opponent...");
+    });
+
+    socket.on("first_turn", () => {    
+      setIsContinueTurn(CONTINUE);
+      console.log("first");
     });
 
     return () => {
       socket.off("match_start");
+      socket.off("first_turn");
     };
   }, []);
+
+  useEffect(() => {
+    
+  })
 
   useEffect(() => {
     socket.on("winner", (winner) => {
@@ -149,6 +162,20 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
   const handleDirection = () => {
     setBombDirection(!bombDirection);
   };
+  
+  const handleKeyDown = useCallback((event) => {
+    if (event.key === 'r') {
+      handleDirection();
+    }
+  }, [handleDirection]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   const handleClick = (position) => {
     if (bombIsUsing != NO_BOMB_USING && !isMatchStart) {
@@ -165,6 +192,8 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
         socket.emit("match_win", [socket.id, roomId]);
       }
     } else if (!CheckBomb(position, bombPositionOpponent)) {
+      const element = document.getElementById(JSON.stringify(position));
+      element.classList.toggle("bg-slate-300");
       setIsContinueTurn(!CONTINUE);
       socket.emit("opponent_turn", roomId);
       return;
@@ -174,7 +203,6 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
   const handleReady = () => {
     if (bomb.every((value) => value == 0)) {
       socket.emit("player_ready", { roomId, bombPosition });
-      socket.emit("send_data", { bombPosition, roomId });
       setBombPosition([]);
       setIsContinueTurn(!CONTINUE)
     }
@@ -188,12 +216,18 @@ const BattleField = ({ battleSize, bomb, bombIsUsing, bombUsed }) => {
         message={modalMessage}
       />
       <div className="px-4 py-4 flex flex-col items-end">
-        <div className="w-full grid grid-flow-row grid-cols-1 text-center">
+        <div className="w-full grid grid-flow-row grid-cols-2 text-center">
           <button
             onClick={handleDirection}
             className="text-white mr-1 bg-slate-700 hover:bg-slate-800 font-medium rounded-lg text-sm px-5 py-2.5"
           >
-            Xoay chiều đặt bomb
+            Xoay chiều đặt bomb (R)
+          </button>
+          <button
+            // onClick={handleUndo}
+            className="text-white mr-1 bg-slate-700 hover:bg-slate-800 font-medium rounded-lg text-sm px-5 py-2.5"
+          >
+            Undo
           </button>
         </div>
         <section className={`grid h-96 w-96 grid-cols-10 gap-1 pt-4`}>

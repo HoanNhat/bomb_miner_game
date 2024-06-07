@@ -21,15 +21,21 @@ var room = {
 };
 
 io.on("connection", (socket) => {
-  socket.on("join_room", (roomId) => {
-    const isInRoom = socket.rooms.has(room);
-    if (isInRoom) {
-      socket.leaveAll();
-    }
-    
+  const isInRoom = socket.rooms.has(room);
+  if (isInRoom) {
+    socket.leaveAll();
+  }
+
+  socket.on("join_room", (roomId) => { 
     if (roomId != null) {
       socket.join(roomId);
-      console.log(socket.id, "join", roomId);
+    }
+
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const numberOfClients = room ? room.size : 0;
+
+    if (numberOfClients === 2) {
+      io.to(roomId).emit("can_start_match")
     }
   });
 
@@ -42,10 +48,10 @@ io.on("connection", (socket) => {
     } else {
       socket.to(data.roomId).emit("send_data", room.players[1].bombPosition) 
     }
-    
+
     if (room.numPlayers === room.players.length) {
       io.to(data.roomId).emit("match_start");
-      room.players = [];
+      socket.to(data.roomId).emit("first_turn");
     }
   });
 
@@ -59,6 +65,7 @@ io.on("connection", (socket) => {
 
   socket.on('leave_room', (roomId) => {
     socket.leave(roomId);
+    room.players = [];
   });
 });
 
